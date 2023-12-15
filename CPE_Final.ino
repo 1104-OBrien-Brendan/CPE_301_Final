@@ -1,4 +1,3 @@
-
 #include <dht.h>
 dht DHT;
 #include <Stepper.h>
@@ -10,6 +9,7 @@ dht DHT;
 //Declarations for Stepper Motor
 const int stepsPerRevolution = 2038; // Total steps per revolution
 Stepper myStepper(stepsPerRevolution, 8, 10, 9, 11);
+
 
 // UART Pointers
 volatile unsigned char *myUCSR0A  = (unsigned char *)0x00C0;
@@ -24,11 +24,13 @@ volatile unsigned char *portE     = (unsigned char *) 0x2E;
 volatile unsigned char *portDDRE  = (unsigned char *) 0x2D;
 
 
+
 //water sensor pointers
 volatile unsigned char* my_ADMUX = (unsigned char*) 0x7C;
 volatile unsigned char* my_ADCSRB = (unsigned char*) 0x7B;
 volatile unsigned char* my_ADCSRA = (unsigned char*) 0x7A;
 volatile unsigned int* my_ADC_DATA = (unsigned int*) 0x78;
+
 
 //Button for Stepper Motor
 int lastButtonState = 0; // last button state
@@ -37,21 +39,23 @@ volatile unsigned char* pinB = (unsigned char*) 0x23;
 volatile unsigned char *ddrB =  (unsigned char*) 0x24;  
 volatile unsigned char* portB = (unsigned char*) 0x25;
 
-
 //pin 2 and 3 are chip inputs 5 is enabler and A10 is button input checking for ground input to set low
 // UART Pointers
 volatile unsigned char* portK = (unsigned char*) 0x108;
 volatile unsigned char* ddrK  = (unsigned char*) 0x107;
 volatile unsigned char* pinK  = (unsigned char*) 0x106;
 
+
 //RTC Clock Module:
 #include <Wire.h>
 #include <RTClib.h>
 RTC_DS1307 rtc;
 
+
 void openVent();
 void closeVent();
 void fanMotor();
+
 
 int mode=0;
 unsigned int temp;
@@ -59,6 +63,7 @@ unsigned int temp;
 
 const int RS= 42, EN= 43, D4 = 44, D5 = 45, D6 = 46, D7 = 47;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
+
 
 unsigned long previousMillis = 0;
 const long interval = 60000;
@@ -71,7 +76,9 @@ unsigned int second;
 
 unsigned int state=0;
 
+
 int set_temp=30;
+
 
 void setup(){      
            
@@ -190,6 +197,8 @@ void loop(){
         U0putchar('e');
         U0putchar('d');
         U0putchar('\n');
+
+
                
     }
        else if (!(*pinB & 0x80) && motorPosition == 1){  
@@ -222,10 +231,10 @@ void loop(){
         U0putchar('d');  
         U0putchar('\n');
 
-
        }
 
   }
+
 
   if (mode ==0){
     //set pin ALL LED's LOW
@@ -373,7 +382,10 @@ if(mode == 4){
   }
 }
 
+
+
 }
+
 
 void U0Init(int U0baud){
  unsigned long FCPU = 16000000;
@@ -395,6 +407,8 @@ void putChar(unsigned char U0pdata){
   while((*myUCSR0A & TBE)==0);
   *myUDR0 = U0pdata;
 }
+
+
 
 void start_reset (){
   mode = 1;
@@ -425,10 +439,14 @@ unsigned int humidity = DHT.humidity;//creates int variable with humidity value
 
 
 
+
+
 void stp (){
   mode = 0;
   lcd.clear();
 }
+
+
 
 
 void adc_init(){
@@ -468,6 +486,8 @@ unsigned int adc_read(unsigned char adc_channel_num){
   return *my_ADC_DATA;
 }
 
+
+
 void U0init(int U0baud){
   unsigned long FCPU = 16000000;
   unsigned int tbaud;
@@ -491,18 +511,8 @@ void U0putchar(unsigned char U0pdata){
 
 
 
-
-
-
-
-
 void waterSensorLoop(){
   unsigned int cs1 = adc_read(0);
-
-
-
-
-
 
 
 
@@ -511,12 +521,6 @@ void waterSensorLoop(){
   }
   return mode;
 }
-
-
-
-
-
-
 
 
 void LoopDHT11(){
@@ -567,7 +571,6 @@ void fanMotor(){
     Serial.print('low');
   }
 }
-
 
 
 void lcd_error(){
