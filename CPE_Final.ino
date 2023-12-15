@@ -1,3 +1,6 @@
+//Brendan OBrien and Fernando Quintero
+//CPE 301 Final Project
+
 #include <dht.h>
 dht DHT;
 #include <Stepper.h>
