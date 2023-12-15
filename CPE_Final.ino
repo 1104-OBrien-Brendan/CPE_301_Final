@@ -1,10 +1,11 @@
 //Brendan OBrien and Fernando Quintero
 //CPE 301 Final Project
 
-#include <dht.h>
+#include <dht.h> //dht library
 dht DHT;
-#include <Stepper.h>
-#include <LiquidCrystal.h>
+#include <Stepper.h> //stepper motor library
+#include <LiquidCrystal.h> //lcd library
+
 #define RDA 0x80
 #define TBE 0x20  
 #define DHT11_PIN 7
@@ -50,36 +51,38 @@ volatile unsigned char* pinK  = (unsigned char*) 0x106;
 
 
 //RTC Clock Module:
-#include <Wire.h>
-#include <RTClib.h>
+#include <Wire.h> //For the clock Module
+#include <RTClib.h> //Clock module library
 RTC_DS1307 rtc;
 
-
-void openVent();
+//Servo Functions
+void openVent(); 
 void closeVent();
-void fanMotor();
+void fanMotor(); //Fan motor function
 
-
+//Sets mode variable to 0 for boot up
 int mode=0;
+
+//Creates int used to monitor temp
 unsigned int temp;
 
-
+//Sets LCD pins
 const int RS= 42, EN= 43, D4 = 44, D5 = 45, D6 = 46, D7 = 47;
 LiquidCrystal lcd(RS, EN, D4, D5, D6, D7);
 
-
+//Sets up vatiables for millis function used in Temp sensor display
 unsigned long previousMillis = 0;
 const long interval = 60000;
 
-
+//Int variables used for clock module
 unsigned int hour;
 unsigned int minute;
 unsigned int second;
 
-
+//Variable that controls state of Arduino
 unsigned int state=0;
 
-
+//variable used for temperature threhold changing between states
 int set_temp=30;
 
 
@@ -96,20 +99,16 @@ void setup(){
 
   // Set the speed of the stepper motor:
   myStepper.setSpeed(10);
-  // Start serial communication at a baud rate of 9600:
+  
+  //Sets port B to output for 
   *ddrB &= 0x7F;
   *portB |= 0x80;
- 
+
+ //Sets ports E and K to output for use in motor and buttons
   *portDDRE |= 0x38;
   *portK |= 0x04;
   *ddrK &= 0x04;
   *portE |= 0x20;
-
-
-  //Motor Setup
-  *portDDRE |= 0x38;
-  *portE |= 0x20;
-
 
 //LED's setup for output
   *portDDRA |= 0x0F;
@@ -124,13 +123,13 @@ attachInterrupt(digitalPinToInterrupt(19), stp, CHANGE);
 lcd.begin(16, 2);
 lcd.setCursor(0,0);
 
-
+//RTC setup
 rtc.begin();
 rtc.isrunning(); {
 rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 }
 
-
+//Prints bootup time and display it is in disabled mode
 DateTime now = rtc.now();
 hour = now.hour();
 minute = now.minute();
@@ -154,23 +153,25 @@ second = now.second();
   U0putchar('d');  
   U0putchar('\n');
 
-
+//sets up dht to read temperature 
 int chk = DHT.read11(DHT11_PIN);
 unsigned int temp= DHT.temperature;
 unsigned int temperature = DHT.temperature; //creates int variable with temperature value
 
-
+//Sets up dht to read humidity
 unsigned int hum = DHT.humidity;
 unsigned int humidity = DHT.humidity;//creates int variable with humidity value
 }
 
 void loop(){
-  if (mode !=0){
+  //checks mode and runs these as long as it is not disabled
+if (mode !=0){
    temp = temperature();
    waterSensorLoop();
     LoopDHT11();
     //Stepper Motor
     int button = (*pinB & 0x80);
+    //checks for servo avtivation to print closed if previously opened
     if (!(*pinB & 0x80) && motorPosition == 0) {
         myStepper.step(stepsPerRevolution / 2); // Turn 180 degrees forwards
         motorPosition = 1; // Update the motor position
@@ -204,6 +205,7 @@ void loop(){
 
                
     }
+    //checks for servo activation and prints open if previously closed
        else if (!(*pinB & 0x80) && motorPosition == 1){  
         myStepper.step(-stepsPerRevolution / 2); // Return to original position
         motorPosition = 0; // Update the motor position
@@ -238,7 +240,7 @@ void loop(){
 
   }
 
-
+//checks mode for disabled and sets leds off and turns on yellow, turns off motor and prints time disabled was activated
   if (mode ==0){
     //set pin ALL LED's LOW
    *portA = 0x00;
@@ -274,6 +276,7 @@ second = now.second();
 
 
   }
+  //mode 1 is activated by start/reset button, if mode one then according to temp will either run motor or stop motor. 
   if(mode ==1){
     if ( temp < set_temp){
       mode=2;
@@ -283,6 +286,7 @@ second = now.second();
     }
  
  }
+ // turns off motor, all leds, turns on green led and prints time that mode 2 was activated
  if (mode ==2){      
   //turn off fan motor
       *portE &= 0xF7;
@@ -311,10 +315,12 @@ second = now.second();
           U0putchar('\n');
           state = mode;
     }
+    //sends sytem mode 3 if temp is met
   if(temp>set_temp){
     mode=3;
   }
  }
+ // sends system into running
  if (mode == 3){
         //turn on fan motor
      *portE |= 0x28;
@@ -346,12 +352,13 @@ second = now.second();
           U0putchar('\n');
           state = mode;
     }
+    //sends back to mode 2, idle, when temp is met
   if (temp<set_temp){
     mode = 2;
   }
  }
 
-
+//when water level is low and mode 4 is activated, prints error message and waits for reset or stop
 if(mode == 4){
   //error message
   lcd_error();
@@ -412,7 +419,7 @@ void putChar(unsigned char U0pdata){
 }
 
 
-
+//function activated every time start/ reset button is used
 void start_reset (){
   mode = 1;
   int chk = DHT.read11(DHT11_PIN);
@@ -443,7 +450,7 @@ unsigned int humidity = DHT.humidity;//creates int variable with humidity value
 
 
 
-
+//function for stop button that sends to mode 0 for disabled
 void stp (){
   mode = 0;
   lcd.clear();
@@ -490,7 +497,7 @@ unsigned int adc_read(unsigned char adc_channel_num){
 }
 
 
-
+//set up baud
 void U0init(int U0baud){
   unsigned long FCPU = 16000000;
   unsigned int tbaud;
@@ -501,6 +508,7 @@ void U0init(int U0baud){
   *myUCSR0C = 0x06;
   *myUBRR0  = tbaud;
 }
+//set up char reads and prints
 unsigned char U0kbhit(){
   return *myUCSR0A & RDA;
 }
@@ -513,7 +521,7 @@ void U0putchar(unsigned char U0pdata){
 }
 
 
-
+//function for water sensor that goes to error if two low
 void waterSensorLoop(){
   unsigned int cs1 = adc_read(0);
 
@@ -525,7 +533,7 @@ void waterSensorLoop(){
   return mode;
 }
 
-
+//Function for temp/humidity sensor that constantly check temp and humidity but only prints once per minute
 void LoopDHT11(){
 int chk = DHT.read11(DHT11_PIN);
 unsigned int temp= DHT.temperature;
@@ -564,18 +572,17 @@ int chk = DHT.read11(DHT11_PIN);
   return temperature;
 }
 
-
+//fan motor funciton for on and off
 void fanMotor(){
   if(*pinK & 0x04){
     *portE |= 0x28;
   }
   else{
     *portE &= 0xF7;//Sets pin 5 low when button is pressed
-    Serial.print('low');
   }
 }
 
-
+//function for displaying error to lcd when water is too
 void lcd_error(){
   if(mode==4){
  lcd.clear();
